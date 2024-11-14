@@ -5,6 +5,7 @@ function Get-SecretFile
     if (Test-Path -Path $FilePath)
     {
         $Credential = Import-Clixml -Path $FilePath
+        write-verbose "Credentials found for user '$($Credential.Username)'."
         return $Credential
     }
     else
