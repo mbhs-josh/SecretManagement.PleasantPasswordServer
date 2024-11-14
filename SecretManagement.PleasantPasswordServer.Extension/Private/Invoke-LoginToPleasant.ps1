@@ -34,6 +34,20 @@ function Invoke-LoginToPleasant
         $AdditionalParameters
     )
 
+    # Check if a login token already exists and is not expired
+    if ($null -ne $script:LoginToken){
+            write-verbose "Existing login token found"
+        if ((get-date) -lt $script:loginToken.expires){
+            write-verbose "Login token is valid"
+            return $Script:loginToken.access_token
+        } else {
+            write-verbose "Login token is expired"
+        }
+    }
+
+    # Get a token if none already exists or it is expired
+    write-verbose "Generating new login token"
+    
     $PasswordServerURL = [string]::Concat($AdditionalParameters.ServerURL, ":", $AdditionalParameters.Port)
 
     $SecretFile = Get-SecretFile
@@ -54,6 +68,7 @@ function Invoke-LoginToPleasant
     }
 
     # Authenticate to Pleasant Password Server
+    write-verbose $Splat.uri
     $JSON = Invoke-WebRequest @splat
 
     if ($null -eq $JSON)
@@ -62,10 +77,11 @@ function Invoke-LoginToPleasant
     }
     else
     {
-        # Generate JSON token
-        $Token = (ConvertFrom-Json $JSON.Content).access_token
+        # Generate and store JSON token
+        $script:loginToken = ConvertFrom-Json $JSON.Content
+        $script:loginToken | Add-Member -MemberType NoteProperty -Name "expires" -value (get-date).AddSeconds($script:LoginToken.expires_in)
 
-        return $Token
+        return $script:loginToken.access_token
     }
 
 }
