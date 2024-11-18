@@ -46,7 +46,7 @@ function Invoke-LoginToPleasant
     }
 
     # Get a token if none already exists or it is expired
-    write-verbose "Generating new login token"
+    Write-Verbose "Generating new login token"
     
     $PasswordServerURL = [string]::Concat($AdditionalParameters.ServerURL, ":", $AdditionalParameters.Port)
 
