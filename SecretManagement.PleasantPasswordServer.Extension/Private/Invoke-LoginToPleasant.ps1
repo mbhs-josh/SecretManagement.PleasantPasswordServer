@@ -35,11 +35,12 @@ function Invoke-LoginToPleasant
     )
 
     # Check if a login token already exists and is not expired
-    if ($null -ne $script:LoginToken){
-            Write-Verbose "Existing login token found"
-        if ((get-date) -lt $script:loginToken.expires){
-            Write-Verbose "Login token is valid"
-            return $Script:loginToken.access_token
+    $LoginToken = Get-SecretFile -LoginToken
+    
+    if ($null -ne $LoginToken){
+        if ((get-date) -lt $loginToken.expires){
+            Write-Verbose "Login token is not expired"
+            return $loginToken.access_token
         } else {
             Write-Verbose "Login token is expired"
         }
@@ -50,7 +51,7 @@ function Invoke-LoginToPleasant
     
     $PasswordServerURL = [string]::Concat($AdditionalParameters.ServerURL, ":", $AdditionalParameters.Port)
 
-    $SecretFile = Get-SecretFile
+    $SecretFile = Get-SecretFile -VaultCredential
 
     # Create OAuth2 token params
     $tokenParams = @{
@@ -80,12 +81,14 @@ function Invoke-LoginToPleasant
         # Generate and store JSON token
         $token = ConvertFrom-Json $JSON.Content
 
-        $script:loginToken = [PSCustomObject]@{
+        $loginToken = [PSCustomObject]@{
             access_token = $token.access_token
             expires      = (Get-Date).AddSeconds($token.expires_in)
         }
 
-        return $script:loginToken.access_token
+        Out-SecretFile -LoginToken $loginToken
+
+        return $loginToken.access_token
     }
 
 }
